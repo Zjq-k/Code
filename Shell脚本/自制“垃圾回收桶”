@@ -1,0 +1,48 @@
+dir=/dev/my_null/`date "+%Y_%m_%d"`   #定义目录
+array=(`shift;echo $@`)    #将将本的所有除了第一个以后的参数存储到数组中。
+
+find /dev/my_null -name `date "+%Y_%m_%d" -d "-7 day"` -exec rm -rf {} \;
+#find /dev/my_null -type d -mtime +3 -exec rm {} \;
+#判断垃圾桶文件是否存在，存在则创建
+[ -d $dir ] || mkdir -p $dir
+
+#定义函实现当执行脚本时，传递给函数的参数对应的文件或者目录被移动到垃圾桶里。
+r_move(){
+    for i in $@     #遍历传递的参数
+    do
+        if [ -e $i ]          #判断是否为文件或者目录
+        then
+            name=$i.`date "+%H%M%S"`       #创建新文件
+            mv $i $dir/$name           #将新文件移动到垃圾桶目录中
+        else
+            echo "$i 不是个文件或者目录。。"
+        fi
+    done
+}
+#定义case循环作为将本接口，实现rm所带不同参数的不同功能
+case "$1" in
+    -rf|-fr)
+        echo "直接删除。。"
+        r_move ${array[@]}          #给r_move函数传参
+        ;;
+    -r)
+        echo "直接删除。。"
+        r_move $2
+        ;;
+    -f)
+        read -p "确定要删除$2吗？[Y/N]" num
+        if (($num==N))
+        then
+            exit 0
+        elif (($num==Y))
+        then
+            echo "zhijieshanchu.."
+            shift
+        else
+            echo "请输入[Y/N]"
+        fi
+        ;;
+    *)
+        echo "参数不合法..."
+        ;;
+esac
